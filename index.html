@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const errMsg = encodeURIComponent(message + ' at ' + (source ? source.split('/').pop() : '') + ':' + lineno + ':' + colno);
+      fetch('/error?msg=' + errMsg);
+    };
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dijital Oda: Keşfedilen Mekân - 3D İnteraktif WebGL Karavan Deneyimi">
+  <title>Dijital Oda: Keşfedilen Mekân</title>
+  
+  <!-- Fontlar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Dosyası -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="sunset-theme view-exterior">
+
+  <!-- Kayan Yıldız Toast Bildirimi -->
+  <div id="toast-notification" class="toast-notification hidden">
+    <span class="toast-icon">💫</span>
+    <span class="toast-text">Gökyüzünde parlak bir şey süzülüyor! Dış görünüme geçerek izleyin.</span>
+  </div>
+
+  <!-- Arka Plan Sesleri Başlatıcı Bildirimi -->
+  <div id="audio-prompt" class="audio-prompt">
+    <div class="audio-prompt-content" style="text-align: center; max-width: 500px;">
+      <h3>👋 Merhaba, Ben Dilara!</h3>
+      <p style="margin: 15px 0; line-height: 1.6;">Yerel evime, yani localhost'uma (127.0.0.1) hoş geldin! Çünkü "ev gibisi yok" ve benim evim de tam burası. Sınırlarımı sadece bir odayla sınırlamadım; bu minik 3D karavan alanımda nesnelere tıklayarak beni daha iyi tanıyabilirsin. Ayrıca seni bekleyen bazı kozmik sürprizler de olacak!</p>
+      <p style="font-size: 13px; opacity: 0.8; margin-bottom: 20px;">Bu 3D deneyimi en iyi şekilde yaşamak ve sentezlenen ortam seslerini duymak için lütfen sesleri aktifleştir.</p>
+      <button id="btn-enable-audio" class="btn-primary" style="width: 100%;">Sesleri Aktif Et & Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- Sol Üst Başlık Kartı -->
+  <header class="title-card">
+    <span class="badge">Dilara'nın Dijital Dünyası</span>
+    <h1>Dilara'nın Karavanı: Keşfedilen Mekân</h1>
+    <p>Merhaba, ben Dilara! Yerel evime, yani localhost'uma (127.0.0.1) hoş geldin! Çünkü "ev gibisi yok" ve benim evim de tam burası. Sınırlarımı sadece bir odayla sınırlamadım; bu minik 3D karavan alanımda nesnelere tıklayarak beni daha iyi tanıyabilirsin. Ayrıca seni bekleyen bazı kozmik sürprizler de olacak, gözün gökyüzünde olsun! 💫</p>
+  </header>
+
+  <!-- Sağ Üst Seçiciler (Tema & Görünüm & Zoom) -->
+  <div class="controls-header-wrapper">
+    <!-- Görünüm Seçici (İç / Dış) -->
+    <div class="glass-panel view-selector">
+      <button id="btn-view-ext" class="view-btn active" title="Dış Görünüm">
+        <span>🏡 Dış Görünüm</span>
+      </button>
+      <button id="btn-view-int" class="view-btn" title="İç Mekan">
+        <span>🔍 İç Mekan</span>
+      </button>
+    </div>
+
+    <!-- Günün Saati (Tema) Seçicisi -->
+    <div class="glass-panel theme-selector">
+      <button id="btn-day" class="theme-btn" title="Gündüz">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <span>Gündüz</span>
+      </button>
+      <button id="btn-sunset" class="theme-btn active" title="Gün Batımı">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41M15.9 12.06A5.95 5.95 0 0 0 12 10.5a5.96 5.96 0 0 0-5.83 5.46h11.66zM2 22h20M12 8.5v3.5M6 22l6-4.5 6 4.5"></path></svg>
+        <span>Gün Batımı</span>
+      </button>
+      <button id="btn-night" class="theme-btn" title="Gece">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span>Gece</span>
+      </button>
+    </div>
+
+    <!-- Mevsim Seçici (İlkbahar / Yaz / Sonbahar / Kış) -->
+    <div class="glass-panel season-selector">
+      <button id="btn-season-spring" class="season-btn" title="İlkbahar">
+        <span>🌸 İlkbahar</span>
+      </button>
+      <button id="btn-season-summer" class="season-btn active" title="Yaz">
+        <span>☀️ Yaz</span>
+      </button>
+      <button id="btn-season-autumn" class="season-btn" title="Sonbahar">
+        <span>🍂 Sonbahar</span>
+      </button>
+      <button id="btn-season-winter" class="season-btn" title="Kış">
+        <span>❄️ Kış</span>
+      </button>
+    </div>
+
+    <!-- Yakınlaştırma (Zoom) Sürgüsü -->
+    <div class="glass-panel zoom-selector">
+      <span>🔍 Zoom:</span>
+      <input type="range" id="zoom-range" min="0.6" max="2.2" value="1.0" step="0.05" title="Yakınlaştır / Uzaklaştır">
+      <span id="zoom-val-text" style="font-size: 11px; font-weight: 700; width: 36px; text-align: right; display: inline-block;">100%</span>
+    </div>
+
+    <!-- Yıldız Tetikleyici (Test Modu) -->
+    <div class="glass-panel test-selector">
+      <button id="btn-trigger-star" class="theme-btn" title="Kayan Yıldız Tetikle (Her 2 dakikada bir otomatik olarak da kayar)" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; padding: 4px 10px; border-radius: 8px;">
+        <span>💫 Yıldız Tetikle (2 Dk'da Bir Otomatik)</span>
+      </button>
+    </div>
+
+    <!-- Kullanım Kılavuzu Butonu -->
+    <div class="glass-panel help-selector">
+      <button id="btn-open-instructions" class="theme-btn" title="Kullanım Kılavuzunu Göster" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 4px 10px; border-radius: 8px;">
+        <span>📖 Kullanım Kılavuzu</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3D Canvas Konteyneri -->
+  <main class="canvas-container">
+    <div id="three-container"></div>
+  </main>
+
+  <!-- Alt Kısım Ses Kontrol Paneli -->
+  <footer class="controls-footer">
+    <div class="glass-panel sound-controls">
+      <div class="sound-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+        <span>Ortam Sesleri (Sentez)</span>
+      </div>
+      <div class="sound-toggles">
+        <button id="btn-sound-waves" class="sound-btn" disabled>
+          <span>🌊 Dalgalar</span>
+        </button>
+        <button id="btn-sound-keyboard" class="sound-btn" disabled>
+          <span>⌨️ Yazma</span>
+        </button>
+        <button id="btn-sound-purr" class="sound-btn" disabled>
+          <span>🐱 Mırıldanma</span>
+        </button>
+        <div class="divider"></div>
+        <button id="btn-mute" class="mute-btn" disabled>Sesi Kapat</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       İNTERAKTİF DIALOGLAR (GLASSMORPHISM MODALS)
+       ========================================== -->
+  
+  <!-- 1. DÖKÜM SOBA (ŞÖMİNE) MODAL -->
+  <dialog id="modal-fireplace" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🔥 Döküm Soba & Kamp Ateşi</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>İster karavan içindeki döküm odun sobası olsun, ister dışarıda yıldızların altında yanan kamp ateşi; çıtırdayan alevler ve odun kokusu doğadaki en samimi anları yaratır.</p>
+        <div class="fact-box">
+          <strong>Ateş Yoğunluğu Ayarı</strong>
+          <p>Karavan sobasının ve kamp ateşinin alev yoğunluğunu buradan ayarlayabilirsiniz:</p>
+          <div class="range-wrapper">
+            <input type="range" id="fire-intensity-slider" min="1" max="3" value="2" step="1">
+            <div class="range-labels">
+              <span>Sakin Alev</span>
+              <span>Normal</span>
+              <span>Canlı Yangın</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 2. KARAVAN ÖZELLEŞTİRİCİ MODAL -->
+  <dialog id="modal-sofa" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🛋️ Karavan Yaşam Alanı & Tasarım</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Küçük ama konforlu koltuk ve çalışma alanı, bir karavanda alanın en verimli kullanıldığı yerdir. Ergonomik minderler ve ahşap katlanır masa bu alanda yer alır.</p>
+        <div class="painting-editor">
+          <p>Karavanınızın dış gövde rengini zevkinize göre özelleştirin:</p>
+          <div class="sofa-color-palette">
+            <span class="sofa-swatch active" style="background: #14b8a6;" data-color-base="#14b8a6"></span>
+            <span class="sofa-swatch" style="background: #ef4444;" data-color-base="#b91c1c"></span>
+            <span class="sofa-swatch" style="background: #3b82f6;" data-color-base="#1d4ed8"></span>
+            <span class="sofa-swatch" style="background: #eab308;" data-color-base="#ca8a04"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 3. MUTFAK MODAL -->
+  <dialog id="modal-kitchen" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🍳 Kompakt Karavan Mutfak Bölmesi</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Lavabosu, dolapları ve kırmızı demliğiyle bu kompakt tezgah, karavanda kahve ve çay saatlerinin merkezidir. Mermer tezgahın altındaki çekmeceler tüm mutfak malzemelerini düzenli bir şekilde saklar.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 4. GİRİŞ KAPISI MODAL -->
+  <dialog id="modal-door" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🚪 Karavan Giriş Kapısı</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Karavanın ortasında bulunan bu retro kapı, kumsaldaki yeşil taş patikaya açılır. Kapıyı açıp dışarıdaki deniz esintisini içeriye davet edebilirsiniz.</p>
+        <div class="fact-box">
+          <strong>Sanal Sahil Turu</strong>
+          <button class="btn-primary" style="margin-top: 10px; width: 100%;" onclick="alert('Dış kumsal yürüyüş modu simüle edildi! Dalga sesleri odağı açıldı.')">🚶 Sahil Yürüyüşü Başlat</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 5. YATAK BÖLMESİ MODAL -->
+  <dialog id="modal-bed" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🛌 Karavan Yatak Bölmesi & Üst Raf</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Karavanın arka tarafına özel olarak tasarlanmış yatak alanı, pencerelerden deniz manzarasını izleyerek uykuya dalmak için mükemmeldir. Yatağın hemen üzerindeki küçük ahşap rafta ise kitaplar ve trailing ivy (sarkan sarmaşık) saksısı bulunur.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 6. KİTAPLIK MODAL -->
+  <dialog id="modal-bookshelf" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>📚 Favori Kitaplar & Filmler</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Karavanın ahşap raflarında yer alan ve Dilara'nın en çok ilham aldığı favori kitaplar ile sinema dünyasının kapılarını aralayan favori filmler:</p>
+        <div class="media-favorites-container">
+          <div class="fav-section">
+            <h3>📚 En Sevdiğim Kitaplar</h3>
+            <ul class="fav-list">
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">📖</span>
+                <div class="fav-info">
+                  <strong>Yüzüklerin Efendisi</strong>
+                  <p>J.R.R. Tolkien - Epik fantastik edebiyatın başyapıtı.</p>
+                </div>
+              </li>
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">📖</span>
+                <div class="fav-info">
+                  <strong>Gece Yarısı Kütüphanesi</strong>
+                  <p>Matt Haig - Yaşamın tüm ihtimallerine dair dokunaklı bir sorgulama.</p>
+                </div>
+              </li>
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">📖</span>
+                <div class="fav-info">
+                  <strong>Söğütler</strong>
+                  <p>Algernon Blackwood - Doğaüstü korku edebiyatının öncüsü.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="fav-section">
+            <h3>🎬 En Sevdiğim Filmler</h3>
+            <ul class="fav-list">
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">🎥</span>
+                <div class="fav-info">
+                  <strong>Avatar</strong>
+                  <p>Pandora'nın doğasıyla bütünleşen görsel bir şölen.</p>
+                </div>
+              </li>
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">🎥</span>
+                <div class="fav-info">
+                  <strong>Yüzüklerin Efendisi Üçlemesi</strong>
+                  <p>Orta Dünya'nın sinematik, unutulmaz serüveni.</p>
+                </div>
+              </li>
+              <li class="highlighted" onclick="playRustleSound()">
+                <span class="fav-icon">🎥</span>
+                <div class="fav-info">
+                  <strong>Narnia Günlükleri</strong>
+                  <p>Gizemli gardırobun ardındaki fantastik krallık.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 7. BİLGİSAYAR EKRANI MODAL -->
+  <dialog id="modal-screens" class="glass-modal">
+    <div class="modal-content large">
+      <header class="modal-header">
+        <h2>💻 Dilara'nın Cozy Masaüstü</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <div class="cozy-desktop">
+          <!-- Sol Kısım: Masaüstü Kısayolları -->
+          <div class="desktop-shortcuts">
+            <div class="shortcut-icon" onclick="alert('📝 Günlük Defteri:\n\n- Karavan restorasyonu tamamlandı! 🚐\n- Şömine yanına odunlar dizildi.\n- Kedim Mia yatağın üzerine yerleşti, çok mutlu görünüyor! 🐱\n- Bahçedeki portakal ağacı çiçek açmış.')">
+              <span class="icon">📝</span>
+              <span class="label">Günlük.txt</span>
+            </div>
+            <div class="shortcut-icon" onclick="alert('🌅 Anılar Albümü:\n\nDenizin dalgalarını izlemek ve gün batımına karşı kahve içmek insana gerçekten huzur veriyor. Dış görünüme geçerek arka plandaki manzaranın tadını çıkarabilirsiniz.')">
+              <span class="icon">🌅</span>
+              <span class="label">Anılar.jpg</span>
+            </div>
+            <div class="shortcut-icon" onclick="document.getElementById('modal-fireplace').showModal(); document.getElementById('modal-screens').close();">
+              <span class="icon">🔥</span>
+              <span class="label">Soba Ayarları</span>
+            </div>
+            <div class="shortcut-icon" onclick="document.getElementById('modal-about').showModal(); document.getElementById('modal-screens').close();">
+              <span class="icon">👩‍💻</span>
+              <span class="label">Hakkımda.txt</span>
+            </div>
+            <div class="shortcut-icon" onclick="window.open('https://linkedin.com/in/dılaraozturk', '_blank')">
+              <span class="icon">💼</span>
+              <span class="label">LinkedIn.lnk</span>
+            </div>
+            <div class="shortcut-icon" onclick="document.getElementById('modal-instructions').showModal(); document.getElementById('modal-screens').close();">
+              <span class="icon">📖</span>
+              <span class="label">Kılavuz.txt</span>
+            </div>
+          </div>
+
+          <!-- Sağ Kısım: Cozy Lofi Müzik Çalar -->
+          <div class="lofi-player-card">
+            <div class="player-cover">
+              <div class="vinyl-record" id="lofi-vinyl">
+                <div class="vinyl-center"></div>
+              </div>
+              <div class="music-wave" id="music-wave-anim">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            
+            <div class="player-info">
+              <h3 id="lofi-track-title">Cozy Sunset Beats</h3>
+              <p id="lofi-artist">Dilara's Ambient Synth</p>
+            </div>
+            
+            <div class="player-progress">
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="lofi-progress-fill"></div>
+              </div>
+              <div class="progress-time">
+                <span id="lofi-current-time">0:00</span>
+                <span>3:20</span>
+              </div>
+            </div>
+
+            <div class="player-controls">
+              <button class="control-btn" id="btn-lofi-prev" title="Önceki Şarkı">⏮️</button>
+              <button class="control-btn play-btn" id="btn-lofi-play" title="Oynat / Duraklat">▶️</button>
+              <button class="control-btn" id="btn-lofi-next" title="Sonraki Şarkı">⏭️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 8. KEDİ MODAL -->
+  <dialog id="modal-cat" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🐱 Mia</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <div class="cat-photos-grid">
+          <div class="cat-photo-frame">
+            <img src="mia_1.jpg" alt="Mia Yatıyor" class="cat-photo">
+          </div>
+          <div class="cat-photo-frame">
+            <img src="mia_2.jpg" alt="Mia Papyonlu" class="cat-photo">
+          </div>
+        </div>
+        <div class="cat-interaction-card">
+          <div class="cat-details" style="width: 100%;">
+            <h3>Mia & Hayvan Sevgisi</h3>
+            <p>Mia benim kedim, kardeşim desem daha doğru olur. 9 yaşında çok akıllı, sevecen, şımarık bir kedidir kendisi. 🐾</p>
+            <p>Ben hayvanları gerçekten çok ama çok seviyorum! Hayatımın her anında onların yeri ve değeri benim için bambaşkadır. Masumiyetleri, o samimi ve karşılıksız sevgileri içimi ısıtır. Doğanın bu sessiz ve güzel dostlarına karşı beslediğim derin sevgi, benim için en saf ve vazgeçilmez duygulardan biridir. ❤️🐾</p>
+            <div class="pet-meter">
+              <label>Mia'yı Sevme Seviyesi: <span id="pet-count">0</span></label>
+              <div class="meter-bar"><div id="meter-fill" style="width: 0%;"></div></div>
+            </div>
+            <button id="btn-pet-cat" class="btn-primary">🐱 Mia'yı Sev</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 9. DENİZ MODAL -->
+  <dialog id="modal-sea" class="glass-modal">
+    <div class="modal-content large">
+      <header class="modal-header">
+        <h2>🌊 Yaz Mevsimi, Deniz ve EKAD Gönüllülüğü</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <div class="carousel-container" id="carousel-sea">
+          <button class="carousel-btn prev-btn" onclick="prevSlide('carousel-sea')">&#10094;</button>
+          <div class="carousel-slides">
+            <div class="carousel-slide active">
+              <img src="sea_1.jpg" alt="EKAD Bebek Kaplumbağalar" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="sea_2.jpg" alt="Ege Denizinde Dalış" class="carousel-img">
+            </div>
+          </div>
+          <button class="carousel-btn next-btn" onclick="nextSlide('carousel-sea')">&#10095;</button>
+          <div class="carousel-dots">
+            <span class="dot active" onclick="setSlide('carousel-sea', 0)"></span>
+            <span class="dot" onclick="setSlide('carousel-sea', 1)"></span>
+          </div>
+        </div>
+        <p>Yaz mevsimini yaşamayı, kumsalda güneşlenmeyi ve denizde yüzmeyi kelimelerle anlatılamayacak kadar çok seviyorum! Benim için denize girmek adeta dünyadan sıyrılmak gibi; bir kez suya girdim mi saatlerce çıkmak istemem, suyun o serinliği ve huzuru beni tamamen sarıp sarmalar. 🌊🏊‍♀️☀️</p>
+        <p style="margin-top: 10px;">Denize ve deniz canlılarına olan bu derin tutkum, beni çok özel bir gönüllülük serüvenine yönlendirdi. **EKAD (Ekolojik Araştırmalar Derneği)** bünyesinde Caretta Caretta deniz kaplumbağalarını korumak için gönüllü oldum. Yaz aylarında sahilde yumurtalarından çıkan minik yavruların güvenle denize ulaşmasını sağlamak, hayatımın en anlamlı ve unutulmaz deneyimlerinden biriydi. Doğayı ve denizlerimizi korumak, onlara sevgiyle dokunmak bu hayattaki en büyük mutluluklarımdandır. 🐢❤️</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 10. YILDIZLAR VE FAIRY LIGHTS MODAL -->
+  <dialog id="modal-stars" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>✨ Gökyüzü Gözlemi & Perseid Meteor Yağmuru</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Gece gökyüzünü izlemeyi, o sonsuz karanlıktaki ışık pırıltılarını ve kayan yıldızları takip etmeyi her zaman çok sevmişimdir. Şehrin ışıklarından uzak bir kamp alanında uzanıp gökyüzünü izlemek paha biçilemez bir huzurdur. 🌌✨</p>
+        
+        <div class="fact-box" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); margin-top: 15px;">
+          <strong style="color: #c084fc; font-size: 15px; display: block; margin-bottom: 5px;">🌠 2026 Perseid Meteor Yağmuru</strong>
+          <p style="font-size: 13px; line-height: 1.6; opacity: 0.95;">
+            Yılın en görkemli gök olaylarından biri olan **Perseid Meteor Yağmuru**, 2026 yılında **11-13 Ağustos** geceleri zirve noktasına ulaşacak. Swift-Tuttle Kuyruklu Yıldızı'nın arkasında bıraktığı toz ve taş kalıntılarının Dünya atmosferine girmesiyle oluşan bu şölen sırasında saatte yaklaşık 60 ila 100 meteor gözlemlenebilecek. 
+          </p>
+          <p style="font-size: 13px; line-height: 1.6; opacity: 0.95; margin-top: 8px;">
+            **2026 Gözlem Şartları:** Bu yıl Ay ilk dördün evresinde olacağı için gece yarısından önce batacak ve gökyüzü tamamen karanlık kalacak. Bu durum, sönük kayan yıldızların dahi net bir şekilde görülebilmesi için harika bir fırsat sunuyor! 🔭
+          </p>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+          <button id="btn-play-melody" class="btn-primary" style="width: 100%;">🎵 Kozmik Yıldız Melodisi Sentezle</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 11. TABLO MODAL -->
+  <dialog id="modal-painting" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🖼️ Dostluk Tablosu</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Hayatımdaki en büyük mutluluk ve zenginliklerden biri, yanımda olan ve her anımı paylaştığım canım arkadaşlarım! Birlikte güldüğümüz, ağladığımız, hayaller kurduğumuz ve yolları paylaştığımız tüm o güzel dostlarım benim için çok ama çok değerliler. İyi ki varlar, hayat onlarla çok daha renkli, neşeli ve anlamlı! ❤️👩‍👩‍👦‍👦</p>
+        <div class="carousel-container" id="carousel-friends">
+          <button class="carousel-btn prev-btn" onclick="prevSlide('carousel-friends')">&#10094;</button>
+          <div class="carousel-slides">
+            <div class="carousel-slide active">
+              <img src="friend_1.jpg" alt="Kalp Yapan Arkadaşlar" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_2.jpg" alt="Kemer Önünde Arkadaşlar" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_3.jpg" alt="Grup Selfie Parkta" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_4.jpg" alt="3 Arkadaş Parkta" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_5.jpg" alt="3 Arkadaş Odada" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_6.jpg" alt="Kafe Masasında Arkadaşlar" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="friend_7.jpg" alt="Balon Kılıçlı Arkadaşlar" class="carousel-img">
+            </div>
+          </div>
+          <button class="carousel-btn next-btn" onclick="nextSlide('carousel-friends')">&#10095;</button>
+          <div class="carousel-dots">
+            <span class="dot active" onclick="setSlide('carousel-friends', 0)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 1)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 2)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 3)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 4)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 5)"></span>
+            <span class="dot" onclick="setSlide('carousel-friends', 6)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 12. BAHÇE VE PORTAKAL AĞACI MODAL -->
+  <dialog id="modal-garden" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🍊 Kokulu Portakal Ağacı & Sahil Bahçesi</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Karavanın hemen yanındaki bu sevimli portakal ağacı, tatlı esintilerle etrafa nefis narenciye kokuları yayar. Altındaki çim alan ve doğal taş patika sahil yaşamına yeşil bir huzur katar.</p>
+        <div class="fact-box">
+          <strong>Bahçe İstatistiği</strong>
+          <p>Yıllık taze portakal verimi: ~25 kg 🍊</p>
+          <p>Toprak tipi: Kumlu ve mineralli sahil toprağı.</p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 13. KOZMİK KRİSTAL MODAL -->
+  <dialog id="modal-crystal" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🔮 Kozmik Enerji Kristali</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body" style="text-align: center;">
+        <div class="crystal-icon" style="font-size: 64px; animation: float 3s ease-in-out infinite; margin-bottom: 15px;">🔮</div>
+        <p style="font-size: 15px; line-height: 1.6; font-style: italic; color: #a7f3d0; margin-bottom: 20px;" id="crystal-quote">
+          "Yıldızlar sadece karanlık çöktüğünde parlar; kendi ışığını bulmak için sabret."
+        </p>
+        <div class="fact-box" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); margin-top: 15px;">
+          <strong style="color: #c084fc;">✨ Evrenin Mesajı</strong>
+          <p style="font-size: 13px; margin-top: 5px; opacity: 0.9;">Kristalden yayılan kozmik titreşimler tüm sahneyi büyüleyici bir ışık dalgasına kavuşturdu.</p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- YENİ PORTFOLYO MODALLERİ -->
+  <!-- 14. HAKKIMDA MODAL -->
+  <dialog id="modal-about" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>👩‍💻 Dilara Hakkında</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body about-body">
+        <div class="about-header-section">
+          <img src="dilara_avatar.png" alt="Dilara Avatar" class="about-avatar">
+          <div class="about-title-info">
+            <h3>Dilara</h3>
+            <p class="subtitle">Bilgisayar Mühendisliği</p>
+          </div>
+        </div>
+        <p>Kendimi her anlamda geliştirmeye çalışan, yeni teknolojileri öğrenmeyi ve uygulamayı seven biriyim. Karavanımda çalışırken lofi müzik dinlemek en büyük hobimdir.</p>
+        <div class="fact-box" style="margin-top: 15px; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">
+          <strong style="color: #60a5fa;">🤝 Gönüllülük & Sosyal Sorumluluk</strong>
+          <p style="font-size: 13px; line-height: 1.5; margin-top: 5px; opacity: 0.95;">
+            Topluma değer katmayı çok önemsiyorum. **Okul Destek Derneği** bünyesinde gönüllü eğitmenlik/mentorluk yaparak ortaokul seviyesindeki öğrencilerin gelişimine katkıda bulunuyorum. Bunun yanı sıra çeşitli teknoloji topluluklarında, sosyal sorumluluk projelerinde ve sivil toplum etkinliklerinde gönüllü olarak yer alıyorum.
+          </p>
+        </div>
+        <div class="fact-box" style="margin-top: 12px;">
+          <strong>İletişim & Sosyal Medya</strong>
+          <p>📧 e-posta: dilara@example.com</p>
+          <p>💼 LinkedIn: <a href="https://linkedin.com/in/dılaraozturk" target="_blank" style="color: #a7f3d0; text-decoration: underline;">linkedin.com/in/dılaraozturk</a> (Profilimi aktif olarak kullanıyorum, hakkımda daha detaylı bilgilere buradan ulaşabilirsiniz.)</p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 15. HAMAK MODAL -->
+  <dialog id="modal-hammock" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🍃 Doğa Sevgisi</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <div class="carousel-container" id="carousel-hammock">
+          <button class="carousel-btn prev-btn" onclick="prevSlide('carousel-hammock')">&#10094;</button>
+          <div class="carousel-slides">
+            <div class="carousel-slide active">
+              <img src="nature_1.jpg" alt="Orman Yürüyüşü" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="nature_2.jpg" alt="Dilara Ormanda" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="nature_3.jpg" alt="Antik Su Kemeri" class="carousel-img">
+            </div>
+          </div>
+          <button class="carousel-btn next-btn" onclick="nextSlide('carousel-hammock')">&#10095;</button>
+          <div class="carousel-dots">
+            <span class="dot active" onclick="setSlide('carousel-hammock', 0)"></span>
+            <span class="dot" onclick="setSlide('carousel-hammock', 1)"></span>
+            <span class="dot" onclick="setSlide('carousel-hammock', 2)"></span>
+          </div>
+        </div>
+        <p>Doğayı, ormanda yürüyüş yapmayı, o temiz havayı içime çekmeyi, kamp yapmayı (şu ana kadar az yapmış olsam da) hep gerçekten çok sevmişimdir. 🌲🧗‍♀️</p>
+        <div class="fact-box" style="margin-top: 15px;">
+          <strong>İlgi Alanları & Kamp Rotaları</strong>
+          <p>⛺ Doğa Kampçılığı & Çadır Kurma</p>
+          <p>🥾 Orman Yürüyüşleri (Trekking)</p>
+          <p>📸 Doğa Fotoğrafçılığı</p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 16. AİLE / SİNEMA MODAL -->
+  <dialog id="modal-cinema" class="glass-modal">
+    <div class="modal-content large">
+      <header class="modal-header">
+        <h2>🎬 Sinema Perdesi & Aile Albümü</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <div class="carousel-container" id="carousel-cinema">
+          <button class="carousel-btn prev-btn" onclick="prevSlide('carousel-cinema')">&#10094;</button>
+          <div class="carousel-slides">
+            <div class="carousel-slide active">
+              <img src="family_6.jpg" alt="Antik Kemer Altında Yürüyüş" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_7.jpg" alt="İkiz Bebeklik" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_8.jpg" alt="Kayak Kasklı İkizler" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_9.jpg" alt="Papağanlı Aile Fotoğrafı" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_10.jpg" alt="Ormanda Hamak ve Aile" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_1.jpg" alt="Köpeklerle İkizler" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_2.jpg" alt="Kayak Pistinde İkizler" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_3.jpg" alt="Gülen İkiz Çocuklar" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_4.jpg" alt="Karda Varil Ateşi" class="carousel-img">
+            </div>
+            <div class="carousel-slide">
+              <img src="family_5.jpg" alt="Işıklı Yılbaşı Ağacı" class="carousel-img">
+            </div>
+          </div>
+          <button class="carousel-btn next-btn" onclick="nextSlide('carousel-cinema')">&#10095;</button>
+          <div class="carousel-dots">
+            <span class="dot active" onclick="setSlide('carousel-cinema', 0)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 1)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 2)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 3)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 4)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 5)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 6)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 7)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 8)"></span>
+            <span class="dot" onclick="setSlide('carousel-cinema', 9)"></span>
+          </div>
+        </div>
+        <p>Canım ailem; biricik ikizim, sevgili annem ve babamla geçirdiğim o güzel, huzurlu ve sevgi dolu anlar. Sıcacık yaz akşamlarında burada uzanıp hep birlikte film izlemek ne kadar da güzel olur! 💖✨</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 18. ROTA / KİŞİSEL GELİŞİM YOLCULUĞU MODAL -->
+  <dialog id="modal-route" class="glass-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>🧭 Yol Haritası & Kişisel Gelişim Rotası</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p>Hayat, sürekli öğrenilen ve her adımda kendimizi yeniden keşfettiğimiz heyecan verici bir yolculuktur. Ben de bu uzun rotada, kendimi her yönden geliştirmeye çalışan biriyim. Sınırlarımı aşmak, yeni perspektifler kazanmak ve her gün bir önceki günden daha donanımlı olmak benim en büyük motivasyon kaynağımdır. 🌟</p>
+        
+        <div class="fact-box" style="margin-top: 15px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+          <strong style="color: #34d399;">🛤️ Gelişim Alanlarım ve Hedeflerim</strong>
+          <p style="font-size: 13.5px; line-height: 1.6; margin-top: 5px; opacity: 0.95;">
+            • <strong>Teknik ve Mühendislik Becerisi:</strong> Bilgisayar mühendisliği alanındaki gelişmeleri yakından takip etmek, yazılım dünyasında kendimi sürekli geliştirerek projeler üretmek.<br>
+            • <strong>Entelektüel Derinlik:</strong> İlgi alanlarımla ilgili kitaplar okumak, sinemayı ve farklı sanat dallarını takip ederek vizyonumu genişletmek.<br>
+            • <strong>Toplumsal Gönüllülük:</strong> Sivil toplum kuruluşlarında aktif roller alarak (Okul Destek Derneği, EKAD vb.) topluma değer katmak ve edindiğim bilgileri başkalarıyla paylaşmak.
+          </p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 17. KULLANIM KILAVUZU / TALİMATLAR MODAL -->
+  <dialog id="modal-instructions" class="glass-modal">
+    <div class="modal-content large">
+      <header class="modal-header">
+        <h2>📖 Karavan Keşif Kılavuzu & Kullanım Talimatları</h2>
+        <button class="btn-close" onclick="this.closest('dialog').close()">&times;</button>
+      </header>
+      <div class="modal-body">
+        <p style="font-size: 15px; font-weight: 500; color: #34d399; margin-bottom: 20px;">Karavanımıza hoş geldiniz! Bu interaktif 3D deneyimde Dilara'nın dünyasını keşfetmek ve ortamdaki etkileşimleri incelemek için aşağıdaki rehberi kullanabilirsiniz:</p>
+        
+        <!-- TEMEL KONTROLLER -->
+        <div class="fav-section" style="margin-bottom: 25px;">
+          <h3 style="color: #60a5fa; font-size: 16px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">🎮 Temel Kontroller</h3>
+          <ul class="fav-list" style="padding-left: 0; list-style: none;">
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.5;">
+              <strong>🔍 Kamera Kontrolü:</strong> Fare sol tuşuyla basılı tutup sürükleyerek 3D sahneyi döndürebilirsiniz. Fare tekerleğiyle yakınlaşabilir/uzaklaşabilirsiniz. Ayrıca sağ üstteki <strong>Zoom Sürgüsünü</strong> de kullanabilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.5;">
+              <strong>🏡 Görünüm Seçici (İç / Dış):</strong> Sağ üst paneldeki butonlardan karavanın dış kumsal alanını veya karavan iç oda görünümünü seçebilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.5;">
+              <strong>🌅 Günün Saati ve Mevsimler:</strong> Sağ üstteki panelden günün vaktini (Gündüz, Gün Batımı, Gece) ve mevsimi (İlkbahar, Yaz, Sonbahar, Kış) değiştirebilirsiniz. Kışın kar yağar, sonbaharda yağmur yağar, yaz ve ilkbaharda kuş sesleri canlanır!
+            </li>
+          </ul>
+        </div>
+
+        <!-- ETKİLEŞİMLER -->
+        <div class="fav-section" style="margin-bottom: 25px;">
+          <h3 style="color: #34d399; font-size: 16px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">⚡ Gizli Etkileşimler ve Tıklanabilir Alanlar</h3>
+          <p style="font-size: 13px; opacity: 0.8; margin-bottom: 12px;">Fare ile üzerlerine geldiğinizde altın rengi sıcak bir parlama (emissive glow) yayan nesnelere tıklayarak detaylı pencereleri açabilirsiniz:</p>
+          <ul class="fav-list" style="padding-left: 0; list-style: none;">
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>💻 Bilgisayar Masası (Karavan İçi):</strong> Bilgisayara veya masasına tıklandığında açılan masaüstü sekmesi (akademik sekme), Dilara'nın cozy çalışma alanını yansıtır. Burada lofi müzik çalabilir, soba alev gücünü kontrol edebilir, Hakkımda notunu ve LinkedIn bağlantısını açabilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>📚 Kitaplık (Karavan İçi):</strong> Kitaplığa tıklayarak Dilara'nın en sevdiği kitapları, okuma alışkanlıklarını ve kitap önerilerini görebilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🧭 Yol Haritası & Rota (Şoför Kabini):</strong> Direksiyon veya ön kabine tıklayarak Dilara'nın teknik, entelektüel ve toplumsal gelişim hedeflerini içeren rotasını inceleyebilirsiniz.
+            </li>
+
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🐈 Mia (Yatak Üstü Kedi):</strong> Sevimli kedimiz Mia'dır. Mia'ya veya üzerinde süzülen 3D Düşünce Bulutuna ("Beni sever misin? 🐾") tıklandığında mırıldanma sesleriyle Mia penceresi açılır. Buradan onu severek sevgi ölçerini doldurabilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🌊 Deniz (Dış Mekan):</strong> Denize tıkladığınızda açılan pencerede Dilara'nın deniz ve yüzme sevgisine dair satırları okuyabilir, su altı dalış albümünü ve Ege denizindeki anılarını inceleyebilirsiniz.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>💫 Yıldız Tetikle Butonu:</strong> Gökyüzünde kayan yıldız animasyonunu başlatır. Yıldız yere düşüp kristale dönüştükten sonra Perseid Meteor Yağmuru hakkında gökbilim detaylarını gösteren pencere açılır.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🖼️ Dostluk Tablosu (Yatak Üstü):</strong> Piksel tarzda çizilmiş can dostları temsil eden panoramik tablo. Tıklandığında arkadaş sevgisini anlatan detaylar yer alır.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🍃 Hamak (Bahçe):</strong> Doğa sevgisini, trekking rotalarını ve orman yürüyüşü fotoğraflarını gösteren pencereyi açar.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>🎬 Sinema Perdesi (Bahçe):</strong> Biricik ikizim, annem ve babamla geçireceğim cozy yaz sineması günlerimi simgeler.
+            </li>
+          </ul>
+        </div>
+
+        <!-- DOĞAL OLAYLAR VE GÖK GÜRÜLTÜSÜ -->
+        <div class="fav-section" style="margin-bottom: 10px;">
+          <h3 style="color: #fb7185; font-size: 16px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">⛈️ Doğal Olaylar & Sesler</h3>
+          <ul class="fav-list" style="padding-left: 0; list-style: none;">
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>❄️ Kar Yağışı (Kış):</strong> Kış mevsimi seçildiğinde tüm sahne üzerinde 3D kar taneleri süzülmeye başlar.
+            </li>
+            <li style="background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+              <strong>⛈️ Yıldırım & Gök Gürültüsü (Sonbahar):</strong> Sonbahar mevsiminde gökyüzünde çakan mor-beyaz yıldırım parlamalarının ardından, ortamda sentezlenen gök gürültüsü sesi duyulur.
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Kütüphaneler -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- JS Dosyası -->
+  <script src="script.js?v=vanilla-caravan-updates-2"></script>
+  <!-- Slide/Carousel logic -->
+  <script>
+    function prevSlide(carouselId) {
+      changeSlide(carouselId, -1);
+    }
+    function nextSlide(carouselId) {
+      changeSlide(carouselId, 1);
+    }
+    function setSlide(carouselId, index) {
+      const carousel = document.getElementById(carouselId);
+      if (!carousel) return;
+      const slides = carousel.querySelectorAll('.carousel-slide');
+      const dots = carousel.querySelectorAll('.dot');
+      
+      slides.forEach(s => s.classList.remove('active'));
+      dots.forEach(d => d.classList.remove('active'));
+      
+      if (slides[index]) slides[index].classList.add('active');
+      if (dots[index]) dots[index].classList.add('active');
+    }
+    function changeSlide(carouselId, direction) {
+      const carousel = document.getElementById(carouselId);
+      if (!carousel) return;
+      const slides = carousel.querySelectorAll('.carousel-slide');
+      let activeIndex = -1;
+      slides.forEach((s, i) => {
+        if (s.classList.contains('active')) activeIndex = i;
+      });
+      if (activeIndex === -1) return;
+      let newIndex = activeIndex + direction;
+      if (newIndex >= slides.length) newIndex = 0;
+      if (newIndex < 0) newIndex = slides.length - 1;
+      setSlide(carouselId, newIndex);
+    }
+  </script>
+</body>
+</html>
