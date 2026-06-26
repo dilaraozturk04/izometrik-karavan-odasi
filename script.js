@@ -5793,6 +5793,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Kapı modal kapatıldığında videoyu duraklat
+  const modalDoor = document.getElementById('modal-door');
+  if (modalDoor) {
+    modalDoor.addEventListener('close', () => {
+      const video = document.getElementById('door-video');
+      if (video) {
+        video.pause();
+      }
+    });
+  }
+
   // Klavyeden tuş seslerini yakalama
   window.addEventListener('keydown', (e) => {
     const modalScreens = document.getElementById('modal-screens');
