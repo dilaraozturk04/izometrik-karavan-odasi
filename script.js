@@ -5782,6 +5782,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Yatak modal kapatıldığında videoyu duraklat
+  const modalBed = document.getElementById('modal-bed');
+  if (modalBed) {
+    modalBed.addEventListener('close', () => {
+      const video = document.getElementById('bed-video');
+      if (video) {
+        video.pause();
+      }
+    });
+  }
+
   // Klavyeden tuş seslerini yakalama
   window.addEventListener('keydown', (e) => {
     const modalScreens = document.getElementById('modal-screens');
