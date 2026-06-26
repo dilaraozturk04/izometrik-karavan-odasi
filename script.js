@@ -5772,12 +5772,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Screens modal kapatıldığında lofi müziği duraklat
+  // Screens modal kapatıldığında lofi müziği ve videoyu duraklat
   const modalScreens = document.getElementById('modal-screens');
   if (modalScreens) {
     modalScreens.addEventListener('close', () => {
       if (lofiPlaying) {
         pauseLofi();
+      }
+      const video = document.getElementById('desktop-video');
+      if (video) {
+        video.pause();
       }
     });
   }
@@ -5798,17 +5802,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalDoor) {
     modalDoor.addEventListener('close', () => {
       const video = document.getElementById('door-video');
-      if (video) {
-        video.pause();
-      }
-    });
-  }
-
-  // Bilgisayar video modalı kapatıldığında videoyu duraklat
-  const modalDesktopVideo = document.getElementById('modal-desktop-video');
-  if (modalDesktopVideo) {
-    modalDesktopVideo.addEventListener('close', () => {
-      const video = document.getElementById('desktop-video');
       if (video) {
         video.pause();
       }
