@@ -1615,7 +1615,7 @@ class ThreeCamperEngine {
     
     gazeboGroup.traverse(child => {
       if (child.isMesh) {
-        child.userData = { hotspotId: 9 };
+        child.userData = { hotspotId: 4 };
         this.interactiveObjects.push(child);
       }
     });
@@ -5802,6 +5802,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalDoor) {
     modalDoor.addEventListener('close', () => {
       const video = document.getElementById('door-video');
+      if (video) {
+        video.pause();
+      }
+    });
+  }
+
+  // Şömine modal kapatıldığında videoyu duraklat
+  const modalFireplace = document.getElementById('modal-fireplace');
+  if (modalFireplace) {
+    modalFireplace.addEventListener('close', () => {
+      const video = document.getElementById('fireplace-video');
       if (video) {
         video.pause();
       }
