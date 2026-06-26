@@ -5804,6 +5804,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Bilgisayar video modalı kapatıldığında videoyu duraklat
+  const modalDesktopVideo = document.getElementById('modal-desktop-video');
+  if (modalDesktopVideo) {
+    modalDesktopVideo.addEventListener('close', () => {
+      const video = document.getElementById('desktop-video');
+      if (video) {
+        video.pause();
+      }
+    });
+  }
+
   // Klavyeden tuş seslerini yakalama
   window.addEventListener('keydown', (e) => {
     const modalScreens = document.getElementById('modal-screens');
