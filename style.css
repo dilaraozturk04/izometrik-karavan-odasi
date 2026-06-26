@@ -1562,7 +1562,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   line-height: 1.3;
 }
 
-.cat-photos-grid, .nature-photos-grid, .sea-photos-grid {
+.cat-photos-grid, .nature-photos-grid, .sea-photos-grid, .kitchen-photos-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -1571,7 +1571,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 100%;
 }
 
-.cat-photo-frame, .nature-photo-frame {
+.cat-photo-frame, .nature-photo-frame, .kitchen-photo-frame {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
@@ -1590,17 +1590,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Alternate tilts for a natural scrapbook/album layout */
 .cat-photos-grid > div:nth-child(even),
 .nature-photos-grid > div:nth-child(even),
-.sea-photos-grid > div:nth-child(even) {
+.sea-photos-grid > div:nth-child(even),
+.kitchen-photos-grid > div:nth-child(even) {
   transform: rotate(1.5deg);
 }
 
-.cat-photo-frame:hover, .nature-photo-frame:hover {
+.cat-photo-frame:hover, .nature-photo-frame:hover, .kitchen-photo-frame:hover {
   transform: scale(1.05) rotate(0deg); /* flattens and lifts on hover! */
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
   z-index: 10;
 }
 
-.cat-photo, .nature-photo {
+.cat-photo, .nature-photo, .kitchen-photo {
   width: 100%;
   height: 100%;
   object-fit: contain; /* displays the ENTIRE photo fully, no cropping whatsoever! */
